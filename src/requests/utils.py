@@ -97,6 +97,8 @@ if sys.platform == "win32":
     # provide a proxy_bypass version on Windows without DNS lookups
 
     def proxy_bypass_registry(host: str) -> bool:
+        from fnmatch import fnmatch
+
         try:
             import winreg
         except ImportError:
@@ -116,21 +118,14 @@ if sys.platform == "win32":
         if not proxyEnable or not proxyOverride:
             return False
 
-        # make a check value list from the registry entry: replace the
-        # '<local>' string by the localhost entry and the corresponding
-        # canonical entry.
         proxyOverride = proxyOverride.split(";")
-        # filter out empty strings to avoid re.match return true in the following code.
-        proxyOverride = filter(None, proxyOverride)
         # now check if we match one of the registry values.
         for test in proxyOverride:
+            test = test.strip()
             if test == "<local>":
                 if "." not in host:
                     return True
-            test = test.replace(".", r"\.")  # mask dots
-            test = test.replace("*", r".*")  # change glob sequence
-            test = test.replace("?", r".")  # change glob char
-            if re.match(test, host, re.I):
+            elif fnmatch(host, test):
                 return True
         return False
 
